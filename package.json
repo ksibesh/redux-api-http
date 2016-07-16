@@ -1,14 +1,15 @@
 {
-  "name": "redux-axios",
-  "version": "1.0.1",
-  "description": "",
+  "name": "redux-api-http",
+  "version": "1.0.0",
+  "description": "calling api's using redux architecture",
   "main": "./dist/app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "grunt"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ksibesh/redux-axios.git"
+    "url": "git+https://github.com/ksibesh/redux-api-http.git"
   },
   "keywords": [
     "redux",
@@ -19,9 +20,9 @@
   "author": "ksibesh",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/ksibesh/redux-axios/issues"
+    "url": "https://github.com/ksibesh/redux-api-http/issues"
   },
-  "homepage": "https://github.com/ksibesh/redux-axios#readme",
+  "homepage": "https://github.com/ksibesh/redux-api-http#readme",
   "devDependencies": {
     "babel-preset-es2015": "^6.9.0",
     "grunt": "^1.0.1",

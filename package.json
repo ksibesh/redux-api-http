@@ -1,6 +1,6 @@
 {
   "name": "redux-api-http",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "calling api's using redux architecture",
   "main": "./dist/app.js",
   "scripts": {

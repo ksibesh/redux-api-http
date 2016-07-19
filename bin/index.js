@@ -32,7 +32,14 @@ export default class AsyncService {
 		for(let key in apis) {
 			this.apiObj[key] = this.apiObj[key] || {};
 			this.apiObj[key]['actionCreator'] = {
-				get: (data) => {
+				get: (data, pathParam) => {
+					if(pathParam) {
+						if(apis[key].charAt(apis[key].length - 1) === '/') {
+							apis[key] += pathParam;
+						} else {
+							apis[key] += '/' + pathParam;
+						}
+					}
 					return fetchData(key, apis[key], 'get', data, headers());
 				},
 				put: (data) => {

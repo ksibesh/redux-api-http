@@ -51,7 +51,14 @@ var AsyncService = function () {
 			var _loop = function _loop(key) {
 				_this.apiObj[key] = _this.apiObj[key] || {};
 				_this.apiObj[key]['actionCreator'] = {
-					get: function get(data) {
+					get: function get(data, pathParam) {
+						if (pathParam) {
+							if (apis[key].charAt(apis[key].length - 1) === '/') {
+								apis[key] += pathParam;
+							} else {
+								apis[key] += '/' + pathParam;
+							}
+						}
 						return fetchData(key, apis[key], 'get', data, headers());
 					},
 					put: function put(data) {

@@ -52,23 +52,16 @@ var AsyncService = function () {
 				_this.apiObj[key] = _this.apiObj[key] || {};
 				_this.apiObj[key]['actionCreator'] = {
 					get: function get(data, pathParam) {
-						if (pathParam) {
-							if (apis[key].charAt(apis[key].length - 1) === '/') {
-								apis[key] += pathParam;
-							} else {
-								apis[key] += '/' + pathParam;
-							}
-						}
-						return fetchData(key, apis[key], 'get', data, headers());
+						return actionMethod(data, pathParam, key, apis[key], 'get', headers);
 					},
 					put: function put(data) {
-						return fetchData(key, apis[key], 'put', data, headers());
+						return actionMethod(data, pathParam, key, apis[key], 'put', headers);
 					},
 					post: function post(data) {
-						return fetchData(key, apis[key], 'post', data, headers());
+						return actionMethod(data, pathParam, key, apis[key], 'post', headers);
 					},
 					delete: function _delete(data) {
-						return fetchData(key, apis[key], 'delete', data, headers());
+						return actionMethod(data, pathParam, key, apis[key], 'delete', headers);
 					}
 				};
 				_this.apiObj[key]['remove'] = function () {
@@ -160,6 +153,17 @@ var removeApi = function removeApi(key) {
 		type: key + '-' + axiosConstants.AXIOS_REMOVE,
 		receivedAt: Date.now()
 	};
+};
+
+var actionMethod = function actionMethod(data, pathParam, key, api, method, headers) {
+	if (pathParam) {
+		if (api.charAt(api.length - 1) === '/') {
+			api += pathParam;
+		} else {
+			api += '/' + pathParam;
+		}
+	}
+	return fetchData(key, api, method, data, headers());
 };
 
 var fetchData = function fetchData(key, url, method, data, headers) {

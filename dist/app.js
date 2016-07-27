@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
 	value: true
 });
-exports.axiosStatusConst = exports.axiosConstants = undefined;
+exports.apiReducer = exports.asyncService = exports.status = undefined;
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -15,160 +15,75 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var axiosConstants = exports.axiosConstants = {
-	AXIOS_REQUEST: 'REQUEST',
-	AXIOS_RESPONSE: 'RESPONSE',
-	AXIOS_ERROR: 'ERROR',
-	AXIOS_REMOVE: 'REMOVE'
+var actionConstant = 'redux-api-http/';
+var apiAction = {
+	REQUEST: 'REQUEST',
+	RESPONSE: 'RESPONSE',
+	ERROR: 'ERROR',
+	REMOVE: 'REMOVE'
 };
-var axiosStatusConst = exports.axiosStatusConst = {
+var status = exports.status = {
 	PEN: 'PENDING',
 	SUCC: 'SUCCESS',
 	ERR: 'ERROR',
 	REM: 'REMOVED'
 };
+var apiMethods = {
+	GET: 'get',
+	POST: 'post',
+	PUT: 'put',
+	DELETE: 'delete'
+};
 
-var AsyncService = function () {
-	function AsyncService(props) {
-		_classCallCheck(this, AsyncService);
+var generateActionType = function generateActionType(action) {
+	return actionConstant + action;
+};
 
-		this.apiObj = {};
-	}
-
-	_createClass(AsyncService, [{
-		key: 'register',
-		value: function register(apis, headers) {
-			var _this = this;
-
-			if (!apis) {
-				return this.apiObj;
-			}
-
-			headers = headers || function () {
-				return {};
-			};
-
-			var _loop = function _loop(key) {
-				_this.apiObj[key] = _this.apiObj[key] || {};
-				_this.apiObj[key]['actionCreator'] = {
-					get: function get(data, pathParam) {
-						return actionMethod(data, pathParam, key, apis[key], 'get', headers);
-					},
-					put: function put(data) {
-						return actionMethod(data, pathParam, key, apis[key], 'put', headers);
-					},
-					post: function post(data) {
-						return actionMethod(data, pathParam, key, apis[key], 'post', headers);
-					},
-					delete: function _delete(data) {
-						return actionMethod(data, pathParam, key, apis[key], 'delete', headers);
-					}
-				};
-				_this.apiObj[key]['remove'] = function () {
-					return removeApi(key);
-				};
-				_this.apiObj[key]['reducer'] = function () {
-					var state = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
-					var action = arguments[1];
-
-					if (!('type' in action)) {
-						return state;
-					}
-
-					var nextState = Object.assign({}, state);
-					switch (action.type) {
-						case key + '-' + axiosConstants.AXIOS_REQUEST:
-							nextState['status'] = axiosStatusConst.PEN;
-							nextState['request'] = action.payload;
-							nextState['lastUpdated'] = action.receivedAt;
-							break;
-						case key + '-' + axiosConstants.AXIOS_RESPONSE:
-							nextState['status'] = axiosStatusConst.SUCC;
-							nextState['httpCode'] = action.payload.status;
-							nextState['response'] = action.payload.data;
-							nextState['lastUpdated'] = action.receivedAt;
-							break;
-						case key + '-' + axiosConstants.AXIOS_ERROR:
-							nextState['status'] = axiosStatusConst.ERR;
-							nextState['httpCode'] = action.payload.status;
-							nextState['error'] = action.payload.data;
-							nextState['lastUpdated'] = action.receivedAt;
-							break;
-						case key + '-' + axiosConstants.AXIOS_REMOVE:
-							nextState['status'] = axiosStatusConst.REM;
-							nextState['lastUpdated'] = action.receivedAt;
-							break;
-						default:
-							return state;
-					}
-					return nextState;
-				};
-			};
-
-			for (var key in apis) {
-				_loop(key);
-			}
-			return this.apiObj;
-		}
-	}, {
-		key: 'getReducers',
-		value: function getReducers() {
-			var apiReducers = {};
-			for (var key in this.apiObj) {
-				apiReducers[key] = this.apiObj[key].reducer;
-			}
-			return apiReducers;
-		}
-	}]);
-
-	return AsyncService;
-}();
-
-exports.default = AsyncService;
-
-
-var requestApi = function requestApi(key, data) {
+var requestApi = function requestApi(key, url, method, data, headers) {
 	return {
-		type: key + '-' + axiosConstants.AXIOS_REQUEST,
-		payload: data,
+		type: generateActionType(apiAction.REQUEST),
+		payload: {
+			key: key,
+			api: url,
+			method: method,
+			data: data,
+			headers: headers
+		},
 		receivedAt: Date.now()
 	};
 };
 var responseApi = function responseApi(key, response) {
 	return {
-		type: key + '-' + axiosConstants.AXIOS_RESPONSE,
-		payload: response,
+		type: generateActionType(apiAction.RESPONSE),
+		payload: {
+			key: key,
+			status: response.status,
+			data: response.data
+		},
 		receivedAt: Date.now()
 	};
 };
 var errorApi = function errorApi(key, error) {
 	return {
-		type: key + '-' + axiosConstants.AXIOS_ERROR,
-		payload: error,
+		type: generateActionType(apiAction.ERROR),
+		payload: {
+			key: key,
+			status: error.status,
+			data: error.data
+		},
 		receivedAt: Date.now()
 	};
 };
 var removeApi = function removeApi(key) {
 	return {
-		type: key + '-' + axiosConstants.AXIOS_REMOVE,
+		type: generateActionType(apiAction.REMOVE),
 		receivedAt: Date.now()
 	};
 };
 
-var actionMethod = function actionMethod(data, pathParam, key, api, method, headers) {
-	if (pathParam) {
-		if (api.charAt(api.length - 1) === '/') {
-			api += pathParam;
-		} else {
-			api += '/' + pathParam;
-		}
-	}
-	return fetchData(key, api, method, data, headers());
-};
-
 var fetchData = function fetchData(key, url, method, data, headers) {
 	return function (dispatch) {
-		dispatch(requestApi(key, data));
+		dispatch(requestApi(key, url, method, data, headers));
 		axiosRequest(key, url, method, data, headers, responseApi, errorApi, dispatch);
 	};
 };
@@ -194,4 +109,78 @@ var axiosRequest = function axiosRequest(key, url, method, data, headers, succCa
 		dispatch(errCallback(key, error));
 	});
 };
+
+var AsyncService = function () {
+	function AsyncService() {
+		_classCallCheck(this, AsyncService);
+	}
+
+	_createClass(AsyncService, [{
+		key: 'dispatch',
+		value: function dispatch(key, api, method, data, headers) {
+			data = data || {};
+			headers = headers || {};
+			method = method || apiMethods.GET;
+
+			return fetchData(key, api, method.toLowerCase(), data, headers);
+		}
+	}, {
+		key: 'remove',
+		value: function remove(key) {
+			return removeApi(key);
+		}
+	}, {
+		key: 'getReducer',
+		value: function getReducer() {
+			var initialState = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+
+			return function () {
+				var state = arguments.length <= 0 || arguments[0] === undefined ? initialState : arguments[0];
+				var action = arguments[1];
+
+				if (!('type' in action) || !action.type.startsWith(actionConstant)) {
+					return state;
+				}
+
+				var nextState = Object.assign({}, state);
+				var actionType = action.type.substr(actionConstant.length);
+				var apiKey = action.payload.key;
+
+				nextState[apiKey] = nextState[apiKey] || {};
+				nextState[apiKey]['lastUpdated'] = action.receivedAt;
+				switch (actionType) {
+					case apiAction.REQUEST:
+						nextState[apiKey]['api'] = action.payload.api;
+						nextState[apiKey]['status'] = status.PEN;
+
+						nextState[apiKey]['request'] = nextState[apiKey]['request'] || {};
+						nextState[apiKey]['request']['headers'] = action.payload.headers;
+						nextState[apiKey]['request']['data'] = action.payload.data;
+						break;
+					case apiAction.RESPONSE:
+						nextState[apiKey]['status'] = status.SUCC;
+						nextState[apiKey]['httpCode'] = action.payload.status;
+						nextState[apiKey]['response'] = action.payload.data;
+						break;
+					case apiAction.ERROR:
+						nextState[apiKey]['status'] = status.ERR;
+						nextState[apiKey]['httpCode'] = action.payload.status;
+						nextState[apiKey]['response'] = action.payload.data;
+						break;
+					case apiAction.REMOVE:
+						nextState[apiKey]['status'] = status.REM;
+						break;
+					default:
+						return state;
+				}
+				return nextState;
+			};
+		}
+	}]);
+
+	return AsyncService;
+}();
+
+var asyncService = exports.asyncService = new AsyncService();
+var apiReducer = exports.apiReducer = asyncService.getReducer();
 //# sourceMappingURL=app.js.map

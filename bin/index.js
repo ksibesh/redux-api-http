@@ -1,141 +1,75 @@
 import axios from 'axios';
 
-export const axiosConstants = {
-	AXIOS_REQUEST: 'REQUEST',
-	AXIOS_RESPONSE: 'RESPONSE',
-	AXIOS_ERROR: 'ERROR',
-	AXIOS_REMOVE: 'REMOVE'
+const actionConstant = 'redux-api-http/';
+let apiAction = {
+	REQUEST: 'REQUEST',
+	RESPONSE: 'RESPONSE',
+	ERROR: 'ERROR',
+	REMOVE: 'REMOVE'
 };
-export const axiosStatusConst = {
+export const status = {
 	PEN: 'PENDING',
 	SUCC: 'SUCCESS',
 	ERR: 'ERROR',
 	REM: 'REMOVED'
+};
+let apiMethods = {
+	GET: 'get',
+	POST: 'post',
+	PUT: 'put', 
+	DELETE: 'delete'
 }
 
-export default class AsyncService {
-	constructor(props) {
-		this.apiObj = {};
-	}
 
-	register(apis, headers) {
-		if(!apis) {
-			return this.apiObj;
-		}
-
-		headers = headers || function() {
-			return {
-
-			};
-		};
-
-		for(let key in apis) {
-			this.apiObj[key] = this.apiObj[key] || {};
-			this.apiObj[key]['actionCreator'] = {
-				get: (data, pathParam) => {
-					return actionMethod(data, pathParam, key, apis[key], 'get', headers);
-				},
-				put: (data) => {
-					return actionMethod(data, pathParam, key, apis[key], 'put', headers);
-				},
-				post: (data) => {
-					return actionMethod(data, pathParam, key, apis[key], 'post', headers);
-				},
-				delete: (data) => {
-					return actionMethod(data, pathParam, key, apis[key], 'delete', headers);
-				}
-			};
-			this.apiObj[key]['remove'] = () => {
-				return removeApi(key);
-			};
-			this.apiObj[key]['reducer'] = (state={}, action) => {
-				if(!('type' in action)) {
-					return state;
-				}
-
-				let nextState = Object.assign({}, state);
-				switch(action.type) {
-					case key + '-' + axiosConstants.AXIOS_REQUEST:
-						nextState['status'] = axiosStatusConst.PEN;
-						nextState['request'] = action.payload;
-						nextState['lastUpdated'] = action.receivedAt;
-						break;
-					case key + '-' + axiosConstants.AXIOS_RESPONSE:
-						nextState['status'] = axiosStatusConst.SUCC;
-						nextState['httpCode'] = action.payload.status;
-						nextState['response'] = action.payload.data;
-						nextState['lastUpdated'] = action.receivedAt;
-						break;
-					case key + '-' + axiosConstants.AXIOS_ERROR:
-						nextState['status'] = axiosStatusConst.ERR;
-						nextState['httpCode'] = action.payload.status;
-						nextState['error'] = action.payload.data;
-						nextState['lastUpdated'] = action.receivedAt;
-						break;
-					case key + '-' + axiosConstants.AXIOS_REMOVE:
-						nextState['status'] = axiosStatusConst.REM;
-						nextState['lastUpdated'] = action.receivedAt;
-						break;
-					default:
-						return state;
-				}
-				return nextState;
-			};
-		}
-		return this.apiObj;
-	}
-
-	getReducers() {
-		let apiReducers = {};
-		for(let key in this.apiObj) {
-			apiReducers[key] = this.apiObj[key].reducer;
-		}
-		return apiReducers;
-	}
+let generateActionType = (action) => {
+	return actionConstant + action;
 }
 
-let requestApi = (key, data) => {
+let requestApi = (key, url, method, data, headers) => {
 	return {
-		type: key + '-' + axiosConstants.AXIOS_REQUEST,
-		payload: data,
+		type: generateActionType(apiAction.REQUEST),
+		payload: {
+			key,
+			api: url,
+			method,
+			data,
+			headers
+		},
 		receivedAt: Date.now()
 	}
 }
 let responseApi = (key, response) => {
 	return {
-		type:key + '-' + axiosConstants.AXIOS_RESPONSE,
-		payload: response,
+		type: generateActionType(apiAction.RESPONSE),
+		payload: {
+			key,
+			status: response.status,
+			data: response.data
+		},
 		receivedAt: Date.now()
 	}
 }
 let errorApi = (key, error) => {
 	return {
-		type: key + '-' + axiosConstants.AXIOS_ERROR,
-		payload: error,
+		type: generateActionType(apiAction.ERROR),
+		payload: {
+			key,
+			status: error.status,
+			data: error.data
+		},
 		receivedAt: Date.now()
 	}
 }
 let removeApi = (key) => {
 	return {
-		type: key + '-' + axiosConstants.AXIOS_REMOVE,
+		type: generateActionType(apiAction.REMOVE),
 		receivedAt: Date.now()
 	}
 }
 
-const actionMethod = (data, pathParam, key, api, method, headers) => {
-	if(pathParam) {
-		if(api.charAt(api.length - 1) === '/') {
-			api += pathParam;
-		} else {
-			api += '/' + pathParam;
-		}
-	}
-	return fetchData(key, api, method, data, headers());
-}
-
 const fetchData = (key, url, method, data, headers) => {
 	return ((dispatch) => {
-		dispatch(requestApi(key, data));
+		dispatch(requestApi(key, url, method, data, headers));
 		axiosRequest(key, url, method, data, headers, responseApi, errorApi, dispatch);
 	});
 }
@@ -163,3 +97,62 @@ let axiosRequest = (key, url, method, data, headers, succCallback, errCallback, 
 		dispatch(errCallback(key, error));
 	});
 }
+
+class AsyncService {
+
+	dispatch(key, api, method, data, headers) {
+		data = data || {};
+		headers = headers || {};
+		method = method || apiMethods.GET;
+
+		return fetchData(key, api, method.toLowerCase(), data, headers);
+	}
+
+	remove(key) {
+		return removeApi(key);
+	}
+
+	getReducer(initialState={}) {
+		return (state=initialState, action) => {
+			if(!('type' in action) || !action.type.startsWith(actionConstant)) {
+				return state;
+			}
+
+			let nextState = Object.assign({}, state);
+			let actionType = action.type.substr(actionConstant.length);
+			let apiKey = action.payload.key;
+
+			nextState[apiKey] = nextState[apiKey] || {};
+			nextState[apiKey]['lastUpdated'] = action.receivedAt;
+			switch(actionType) {
+				case apiAction.REQUEST:
+					nextState[apiKey]['api'] = action.payload.api;
+					nextState[apiKey]['status'] = status.PEN;
+
+					nextState[apiKey]['request'] = nextState[apiKey]['request'] || {}
+					nextState[apiKey]['request']['headers'] = action.payload.headers;
+					nextState[apiKey]['request']['data'] = action.payload.data;
+					break;
+				case apiAction.RESPONSE:
+					nextState[apiKey]['status'] = status.SUCC;
+					nextState[apiKey]['httpCode'] = action.payload.status;
+					nextState[apiKey]['response'] = action.payload.data;
+					break;
+				case apiAction.ERROR:
+					nextState[apiKey]['status'] = status.ERR;
+					nextState[apiKey]['httpCode'] = action.payload.status;
+					nextState[apiKey]['response'] = action.payload.data;
+					break;
+				case apiAction.REMOVE:
+					nextState[apiKey]['status'] = status.REM;
+					break;
+				default:
+					return state;
+			}
+			return nextState;
+		}
+	}
+}
+
+export const asyncService = new AsyncService();
+export const apiReducer = asyncService.getReducer();

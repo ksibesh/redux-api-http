@@ -81,3 +81,56 @@ asyncService.dispatch('myApiKey', 'http://mySampleApi.com/service1', 'get', data
 
 asynService.remove('myApiKey');
 ```
+
+**Example**
+```javascript
+
+// Container Component
+import React from 'react';
+import ReactDOM from 'react-dom';
+import {combineReducers, createStore} from 'redux';
+import {Provider} from 'react-redux';
+import {apiReducer} from 'redux-api-http';
+import DummyComponent from '<path>';
+
+let reducers = combineReducers({
+	'apiReducer': apiReducer
+});
+let store = createStore(reducers);
+
+class SomeComponent extends React.Component {
+	render() {
+		return (
+			<Provider store={store}>
+				<DummyComponent />
+			</Provider>
+		);
+	}
+}
+ReactDOM.render(<SomeComponent />, document.getElementById('container'));
+
+// Dummy Component
+import React from 'react';
+import {asyncService, apiMethod} from 'redux-api-http';
+
+class DummyComponent extends React.Component {
+	componentDidMount() {
+		this.props.dispatch(asyncService.dispatch('key','http://someapi.com/service', apiMethod.GET, {}, {}));
+	}
+	
+	render() {
+		console.log(this.props.someProp);
+		return (
+			<div>
+				dummy component
+			</div>
+		);
+	}
+}
+
+// here apiReducer is used because we register our reducer with this name in the above code
+let mapStateToProps = (state) => ({
+	someProp: state.apiReducer.key
+})
+export default connect(mapStateToProps)(DummyComponent);
+```

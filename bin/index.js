@@ -13,7 +13,7 @@ export const status = {
 	ERR: 'ERROR',
 	REM: 'REMOVED'
 };
-let apiMethods = {
+export const apiMethods = {
 	GET: 'get',
 	POST: 'post',
 	PUT: 'put', 
@@ -98,7 +98,7 @@ let axiosRequest = (key, url, method, data, headers, succCallback, errCallback, 
 	});
 }
 
-class AsyncService {
+export default class AsyncService {
 
 	dispatch(key, api, method, data, headers) {
 		data = data || {};

@@ -77,6 +77,9 @@ var errorApi = function errorApi(key, error) {
 var removeApi = function removeApi(key) {
 	return {
 		type: generateActionType(apiAction.REMOVE),
+		payload: {
+			key: key
+		},
 		receivedAt: Date.now()
 	};
 };
@@ -142,9 +145,11 @@ var AsyncService = function () {
 					return state;
 				}
 
-				var nextState = Object.assign({}, state);
 				var actionType = action.type.substr(actionConstant.length);
 				var apiKey = action.payload.key;
+
+				var nextState = Object.assign({}, state);
+				nextState[apiKey] = Object.assign({}, state[apiKey]);
 
 				nextState[apiKey] = nextState[apiKey] || {};
 				nextState[apiKey]['lastUpdated'] = action.receivedAt;
@@ -153,7 +158,8 @@ var AsyncService = function () {
 						nextState[apiKey]['api'] = action.payload.api;
 						nextState[apiKey]['status'] = status.PEN;
 
-						nextState[apiKey]['request'] = nextState[apiKey]['request'] || {};
+						nextState[apiKey]['request'] = {};
+						nextState[apiKey]['response'] = {};
 						nextState[apiKey]['request']['headers'] = action.payload.headers;
 						nextState[apiKey]['request']['data'] = action.payload.data;
 						break;
@@ -169,6 +175,10 @@ var AsyncService = function () {
 						break;
 					case apiAction.REMOVE:
 						nextState[apiKey]['status'] = status.REM;
+
+						nextState[apiKey]['request'] = {};
+						nextState[apiKey]['response'] = {};
+						nextState[apiKey]['status'] = undefined;
 						break;
 					default:
 						return state;

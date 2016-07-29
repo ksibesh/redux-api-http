@@ -16,7 +16,7 @@ export const status = {
 export const apiMethods = {
 	GET: 'get',
 	POST: 'post',
-	PUT: 'put', 
+	PUT: 'put',
 	DELETE: 'delete'
 }
 
@@ -63,6 +63,9 @@ let errorApi = (key, error) => {
 let removeApi = (key) => {
 	return {
 		type: generateActionType(apiAction.REMOVE),
+		payload: {
+			key,
+		},
 		receivedAt: Date.now()
 	}
 }
@@ -118,9 +121,11 @@ export default class AsyncService {
 				return state;
 			}
 
-			let nextState = Object.assign({}, state);
 			let actionType = action.type.substr(actionConstant.length);
 			let apiKey = action.payload.key;
+
+			let nextState = Object.assign({}, state);
+			nextState[apiKey] = Object.assign({}, state[apiKey]);
 
 			nextState[apiKey] = nextState[apiKey] || {};
 			nextState[apiKey]['lastUpdated'] = action.receivedAt;
@@ -129,7 +134,8 @@ export default class AsyncService {
 					nextState[apiKey]['api'] = action.payload.api;
 					nextState[apiKey]['status'] = status.PEN;
 
-					nextState[apiKey]['request'] = nextState[apiKey]['request'] || {}
+					nextState[apiKey]['request'] = {}
+					nextState[apiKey]['response'] = {};
 					nextState[apiKey]['request']['headers'] = action.payload.headers;
 					nextState[apiKey]['request']['data'] = action.payload.data;
 					break;
@@ -145,6 +151,10 @@ export default class AsyncService {
 					break;
 				case apiAction.REMOVE:
 					nextState[apiKey]['status'] = status.REM;
+
+					nextState[apiKey]['request'] = {};
+					nextState[apiKey]['response'] = {};
+					nextState[apiKey]['status'] = undefined;
 					break;
 				default:
 					return state;
